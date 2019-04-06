@@ -174,6 +174,46 @@ spec:
     targetPort: https
 ---
 
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "10254"
+    prometheus.io/scrape: "true"
+  labels:
+    app: ingress-nginx
+  name: ingress-nginx-metrics
+  namespace: ingress-nginx
+spec:
+  ports:
+    - name: metrics
+      port: 10254
+      targetPort: metrics
+  selector:
+    app: ingress-nginx
+  type: "ClusterIP"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/port: "10254"
+    prometheus.io/scrape: "true"
+  labels:
+    app: ingress-nginx
+  name: ingress-nginx-stats
+  namespace: ingress-nginx
+spec:
+  ports:
+    - name: stats
+      port: 18080
+      targetPort: stats
+  selector:
+    app: ingress-nginx
+  type: "ClusterIP"
+
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
@@ -266,7 +306,7 @@ spec:
       serviceAccountName: nginx-ingress-serviceaccount
       containers:
         - name: nginx-ingress-controller
-          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.21.0
+          image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.23.0
           args:
             - /nginx-ingress-controller
             - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
@@ -297,6 +337,12 @@ spec:
             containerPort: 80
           - name: https
             containerPort: 443
+          - name: stats
+            containerPort: 18080
+            protocol: TCP
+          - name: metrics
+            containerPort: 10254
+            protocol: TCP
           livenessProbe:
             failureThreshold: 3
             httpGet:
